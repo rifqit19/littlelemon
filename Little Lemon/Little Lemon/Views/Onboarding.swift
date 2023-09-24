@@ -10,7 +10,14 @@ import SwiftUI
 public let kFirstName = "first name key"
 public let kLastName = "last name key"
 public let kEmail = "e-mail key"
+public let kPhoneNumber = "phone number key"
 let kIsLoggedIn = "kIsLoggedIn"
+
+public let kOrderStatuses = "order statuses key"
+public let kPasswordChanges = "password changes key"
+public let kSpecialOffers = "special offers key"
+public let kNewsletter = "news letter key"
+
 
 
 struct Onboarding: View {
@@ -18,7 +25,9 @@ struct Onboarding: View {
     @State var firstName = ""
     @State var lastName = ""
     @State var email = ""
+    @State var phoneNumber = ""
     
+
     @State var isLoggedIn = false
 
     @State private var showingAlert = false
@@ -30,35 +39,68 @@ struct Onboarding: View {
                 NavigationLink(destination: Home(), isActive: $isLoggedIn){
                     EmptyView()
                 }
-                TextField("First Name", text: $firstName)
-                    .keyboardType(.default)
-                TextField("Last Name", text: $lastName)
-                    .keyboardType(.default)
-                TextField("Email", text: $email)
-                    .keyboardType(.emailAddress)
-                Button {
-                    if firstName.isEmpty || lastName.isEmpty || email.isEmpty{
-                        alertMessage = "All field are required"
-                        showingAlert = true
-                    }else{
+                
+                VStack{
+                    Hero()
+                        .background(Color.primaryColor1)
+                        .frame(maxHeight: 180)
+
+                    VStack{
+                        Text("First name")
+                            .onboardingTextStyle()
+                        TextField("First Name", text: $firstName)
+                            .keyboardType(.default)
                         
-                        if(isValidEmail(email)){
-                            UserDefaults.standard.set(firstName, forKey: kFirstName)
-                            UserDefaults.standard.set(lastName, forKey: kLastName)
-                            UserDefaults.standard.set(email, forKey: kEmail)
-                            UserDefaults.standard.set(true, forKey: kIsLoggedIn)
-
-                            isLoggedIn = true
-
-                        }else{
-                            alertMessage = "Email not valid"
-                            showingAlert = true
-
-                        }
+                        Text("Last name")
+                            .onboardingTextStyle()
+                        TextField("Last Name", text: $lastName)
+                            .keyboardType(.default)
+                        
+                        Text("Email")
+                            .onboardingTextStyle()
+                        TextField("Email", text: $email)
+                            .keyboardType(.emailAddress)
                     }
-                } label: {
-                    Text("Register")
+                    .textFieldStyle(.roundedBorder)
+                    .disableAutocorrection(true)
+                    .padding()
+
+                    Button {
+                        if firstName.isEmpty || lastName.isEmpty || email.isEmpty{
+                            alertMessage = "All field are required"
+                            showingAlert = true
+                        }else{
+                            
+                            if(isValidEmail(email)){
+                                
+                                UserDefaults.standard.set(firstName, forKey: kFirstName)
+                                UserDefaults.standard.set(lastName, forKey: kLastName)
+                                UserDefaults.standard.set(email, forKey: kEmail)
+                                UserDefaults.standard.set(true, forKey: kIsLoggedIn)
+                                UserDefaults.standard.set(true, forKey: kOrderStatuses)
+                                UserDefaults.standard.set(true, forKey: kPasswordChanges)
+                                UserDefaults.standard.set(true, forKey: kSpecialOffers)
+                                UserDefaults.standard.set(true, forKey: kNewsletter)
+                                firstName = ""
+                                lastName = ""
+                                email = ""
+                                isLoggedIn = true
+
+
+                            }else{
+                                alertMessage = "Email not valid"
+                                showingAlert = true
+
+                            }
+                        }
+                    } label: {
+                        Text("Register")
+                    }
+                    .buttonStyle(ButtonStyleYellowColorWide())
+                    
+                    Spacer()
                 }
+
                 
             }.alert(alertMessage , isPresented: $showingAlert) {
                 Button("OK", role: .cancel){}
@@ -68,6 +110,8 @@ struct Onboarding: View {
                     isLoggedIn = true
                 }
             }
+            .navigationBarBackButtonHidden()
+
         }
 
     }

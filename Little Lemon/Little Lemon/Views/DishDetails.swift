@@ -8,35 +8,37 @@
 import SwiftUI
 
 struct DishDetails: View {
+    
     let dish: Dish
+    @Environment(\.managedObjectContext) private var viewContext
 
     var body: some View {
-        // Create the DishDetails view with details of the selected dish
-        VStack{
-            Text("Dish Details")
-            
-            Text(dish.title ?? "")
-            Text(dish.price ?? "")
-            AsyncImage(url: URL(string: dish.image ?? "")) { phase in
-                // Handle AsyncImage phases here
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 50, height: 50) // Adjust the size as needed
-                case .failure(_):
-                    Text("Image Load Failed")
-                case .empty:
-                    Text("Loading...")
-                default:
-                    Text("Loading...")
-                }
+        ScrollView {
+            AsyncImage(url: URL(string: dish.image ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } placeholder: {
+                ProgressView()
             }
-                .navigationBarTitle(dish.title ?? "Unknown Dish")
-            
+            .clipShape(Rectangle())
+            .frame(minHeight: 150)
+            Text(dish.title ?? "")
+                .font(.subTitleFont())
+                .foregroundColor(.primaryColor1)
+            Spacer(minLength: 20)
+            Text(dish.descriptionDish ?? "")
+                .font(.regularText())
+            Spacer(minLength: 10)
+            Text("$" + (dish.price ?? ""))
+                .font(.highlightText())
+                .foregroundColor(.primaryColor1)
+                .monospaced()
+            Spacer()
         }
-        
+        .frame(maxWidth: .infinity)
+        .ignoresSafeArea()
+
     }
 }
 
