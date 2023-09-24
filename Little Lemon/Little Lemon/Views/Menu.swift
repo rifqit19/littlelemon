@@ -14,23 +14,55 @@ struct Menu: View {
 
     @State var searchText = ""
 
-    
+    @State var startersIsEnabled = true
+    @State var mainsIsEnabled = true
+    @State var dessertsIsEnabled = true
+    @State var drinksIsEnabled = true
+
     
     @State var loaded = false
+    @State var isKeyboardVisible = false
 
 
     var body: some View {
         VStack{
-            Text("Your App Title")
-                .font(.title)
             
-            Text("Chicago")
-                .font(.subheadline)
+            Header()
             
-            Text("Short description of your app")
-                .font(.body)
+            VStack{
+                if !isKeyboardVisible {
+                    withAnimation() {
+                        Hero()
+                            .frame(maxHeight: 180)
+                    }
+                }
+                TextField("Search menu", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding()
+            .background(Color.primaryColor1)
             
-            TextField("Search menu", text: $searchText)
+            ScrollView(.horizontal, showsIndicators: false) {
+                
+                Text("ORDER FOR DELIVERY!")
+                    .font(.sectionTitle())
+                    .bold()
+                    .foregroundColor(.highlightColor2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top)
+                    .padding(.leading)
+
+                
+                HStack(spacing: 20) {
+                    Toggle("Starters", isOn: $startersIsEnabled)
+                    Toggle("Mains", isOn: $mainsIsEnabled)
+                    Toggle("Desserts", isOn: $dessertsIsEnabled)
+                    Toggle("Drinks", isOn: $drinksIsEnabled)
+                }
+                .toggleStyle(MyToggleStyle())
+                .padding(.horizontal)
+            }
+
             
             FetchedObjects(predicate: buildPredicate(),
                            sortDescriptors: buildSortDescriptors()) {
@@ -38,29 +70,53 @@ struct Menu: View {
                 List(dishes) { dish in
                     NavigationLink(destination: DishDetails(dish: dish)){
                         HStack {
-                            Text(dish.title ?? "")
-                            Text(dish.price ?? "")
+                            VStack{
+                                Text(dish.title ?? "")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .font(.sectionCategories())
+                                    .foregroundColor(.black)
+                                
+                                Spacer(minLength: 10)
+
+                                Text(dish.descriptionDish ?? "")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .font(.paragraphText())
+                                    .foregroundColor(.primaryColor1)
+                                    .lineLimit(2)
+                                
+                                Spacer(minLength: 5)
+
+                                Text("$" + (dish.price ?? ""))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .font(.highlightText())
+                                    .foregroundColor(.primaryColor1)
+                                    .monospaced()
+
+                                
+                            }
                             AsyncImage(url: URL(string: dish.image ?? "")) { phase in
-                                // Handle AsyncImage phases here
                                 switch phase {
                                 case .success(let image):
                                     image
                                         .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 50, height: 50) // Adjust the size as needed
+                                        .scaledToFill()
+                                        .frame(width: 90, height: 90)
                                 case .failure(_):
                                     Text("Image Load Failed")
                                 case .empty:
-                                    Text("Loading...")
+                                    ProgressView()
                                 default:
-                                    Text("Loading...")
+                                    ProgressView()
                                 }
                             }
-                            .frame(width: 50, height: 50) // Adjust the size as needed
+                            .frame(width: 90, height: 90)
+                            .clipShape(Rectangle())
                         }
+                        .padding(.vertical)
+                        .frame(maxHeight: 150)
                     }
-                }
-                .listStyle(.plain)
+                } .listStyle(.plain)
+               
             }
 
 
@@ -71,6 +127,18 @@ struct Menu: View {
                 loaded = true
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            withAnimation {
+                self.isKeyboardVisible = true
+            }
+            
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { notification in
+            withAnimation {
+                self.isKeyboardVisible = false
+            }
+        }
+
         
     }
     
@@ -97,7 +165,8 @@ struct Menu: View {
                         dish.title = menuItem.title
                         dish.image = menuItem.image
                         dish.price = menuItem.price
-                        // Set any additional properties here if needed
+                        dish.descriptionDish = menuItem.descriptionDish
+                        dish.category = menuItem.category
                     }
                     
                     try? viewContext.save() // Save the data into the database
@@ -119,14 +188,24 @@ struct Menu: View {
         return [sortDescriptor]
     }
     
-    func buildPredicate() -> NSPredicate {
-        if searchText.isEmpty {
-            return NSPredicate(value: true)
-        } else {
-            return NSPredicate(format: "title CONTAINS[cd] %@", searchText)
-        }
-    }
+//    func buildPredicate() -> NSPredicate {
+//        if searchText.isEmpty {
+//            return NSPredicate(value: true)
+//        } else {
+//            return NSPredicate(format: "title CONTAINS[cd] %@", searchText)
+//        }
+//    }
+    
+    func buildPredicate() -> NSCompoundPredicate {
+        let search = searchText == "" ? NSPredicate(value: true) : NSPredicate(format: "title CONTAINS[cd] %@", searchText)
+        let starters = !startersIsEnabled ? NSPredicate(format: "category != %@", "starters") : NSPredicate(value: true)
+        let mains = !mainsIsEnabled ? NSPredicate(format: "category != %@", "mains") : NSPredicate(value: true)
+        let desserts = !dessertsIsEnabled ? NSPredicate(format: "category != %@", "desserts") : NSPredicate(value: true)
+        let drinks = !drinksIsEnabled ? NSPredicate(format: "category != %@", "drinks") : NSPredicate(value: true)
 
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [search, starters, mains, desserts, drinks])
+        return compoundPredicate
+    }
 
 }
 
